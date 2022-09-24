@@ -23,11 +23,11 @@ jobs:
             cat key.json | docker login -u _json_key --password-stdin https://us-east4-docker.pkg.dev/
 
         - name: Build Image & Push
-        env: 
-          ARTIFACT_REGISTRY_REPO: ${{ secrets.ARTIFACT_REGISTRY_REPO }}
-        run: | 
-          docker build -t ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest .
-          docker push ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest
+          env: 
+            ARTIFACT_REGISTRY_REPO: ${{ secrets.ARTIFACT_REGISTRY_REPO }}
+          run: | 
+            docker build -t ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest .
+            docker push ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest
 
         - name: Show file
           run: cat App.py
