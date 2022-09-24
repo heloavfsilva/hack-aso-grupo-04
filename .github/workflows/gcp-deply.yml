@@ -20,18 +20,13 @@ jobs:
             GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           run: | 
             echo '${{ secrets.GOOGLE_CREDENTIALS }}' > key.json
-            cat key.json | docker login -u _json_key --password-stdin ${{ secrets.ARTIFACT_REGISTRY }}
-
-        - name: Build Image & Push
-        env: 
-          ARTIFACT_REGISTRY_REPO: ${{ secrets.ARTIFACT_REGISTRY_REPO }}
-        run: | 
-          docker build -t ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest .
-          docker push ${{ secrets.ARTIFACT_REGISTRY_REPO }}/hack-aso-grupo-04-back:latest
-
-        - name: Show file
-          run: cat App.py
-
+            cat key.json | docker login -u _json_key --password-stdin https://us-east4-docker.pkg.dev/
+        - name: Build Imag & Push para Google Registry
+          env: 
+            ARTIFACT_REGISTRY: ${{ secrets.ARTIFACT_REGISTRY }}
+          run: | 
+            docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/HACK-ASO-GRUPO-04-BACK:latest .
+            docker push ${{ secrets.ARTIFACT_REGISTRY }}/HACK-ASO-GRUPO-04-BACK:latest
   Deploy:
     needs: Build
     runs-on: ubuntu-latest
@@ -47,14 +42,16 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Deploy hack-aso-grupo-04-back no  Cloud Run
+      - name: Deploy Backend no  Cloud Run
         id: deploy
         run: |-
-          gcloud run deploy hack-aso-grupo-04-back \
+          gcloud run deploy HACK-ASO-GRUPO-04-BACK \
             --quiet \
             --region  ${{ secrets.GOOGLE_REGION }} \
-            --image ${{ secrets.ARTIFACT_REGISTRY }}/hack-aso-grupo-04-back:latest \
+            --image ${{ secrets.ARTIFACT_REGISTRY }}/HACK-ASO-GRUPO-04-BACK:latest \
             --platform managed \
+            --set-env-vars CLOUD_SQL_CONNECTION_NAME=${{ secrets.CLOUD_SQL_CONNECTION_NAME }},CLOUD_SQL_DATABASE_NAME=${{ secrets.CLOUD_SQL_DATABASE_NAME }},CLOUD_SQL_PASSWORD=${{ secrets.CLOUD_SQL_PASSWORD }},CLOUD_SQL_USERNAME=${{ secrets.CLOUD_SQL_USERNAME }} \
             --allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.CLOUD_SQL_CONNECTION_NAME }} \
             --project ${{ secrets.GOOGLE_PROJECT_ID }} \
             --format json
