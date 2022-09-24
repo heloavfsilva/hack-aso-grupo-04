@@ -1,27 +1,61 @@
-name: GCP Cloud Build
+# Nome do Workflow
+name: Frontend Pipeline - Hackathon
 
-on:
-  release:
-    types: [published]
+# Evento que irá acionar a pipeline
+on: 
+  push:
+    branches:
+      - main
+
 jobs:
-    Build:
-      name: Trigger Google Cloud Build
+  Build:
+      name: Build
       runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v2
+      steps: 
+        - name: Clone do Repositório
+          uses: actions/checkout@v2
 
-      - id: 'auth'
+        - name: Login no Google Artifact Registry
+          env:
+            GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          run: | 
+            echo '${{ secrets.GOOGLE_CREDENTIALS }}' > key.json
+            cat key.json | docker login -u _json_key --password-stdin https://us-east4-docker.pkg.dev/
+
+        - name: Build Imag & Push para Google Registry
+          env: 
+            ARTIFACT_REGISTRY: ${{ secrets.ARTIFACT_REGISTRY }}
+            BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          run: | 
+            docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/frontend:latest --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
+            docker push ${{ secrets.ARTIFACT_REGISTRY }}/frontend:latest
+
+        - name: Show file
+          run: cat src/App.js
+
+  Deploy:
+    needs: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone do Repositório
+        uses: actions/checkout@v2
+
+      - name: Autenticação no Google Cloud
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         uses: 'google-github-actions/auth@v0'
         with:
-          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0'
-
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
-
-      - name: 'Start Google Cloud Build trigger'
-        run: |
-          export CLOUDSDK_CORE_DISABLE_PROMPTS=1
-          gcloud beta builds triggers run ${{ secrets.GCP_BUILD_STAGING_TRIGGER_ID }} --tag=${{ github.event.release.tag_name }}
+      - name: Deploy Frontend no  Cloud Run
+        id: deploy
+        run: |-
+          gcloud run deploy frontend \
+            --quiet \
+            --region  ${{ secrets.GOOGLE_REGION }} \
+            --image ${{ secrets.ARTIFACT_REGISTRY }}/hack-aso-grupo-04-back:latest \
+            --platform managed \
+            --allow-unauthenticated \
+            --project ${{ secrets.GOOGLE_PROJECT_ID }} \
+            --format json
