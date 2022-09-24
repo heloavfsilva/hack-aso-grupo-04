@@ -1,5 +1,5 @@
 # Nome do Workflow
-name: Frontend Pipeline - Hackathon
+name: Backend Pipeline - Hackathon
 
 # Evento que irá acionar a pipeline
 on: 
@@ -27,8 +27,8 @@ jobs:
             ARTIFACT_REGISTRY: ${{ secrets.ARTIFACT_REGISTRY }}
             BACKEND_URL: ${{ secrets.BACKEND_URL }}
           run: | 
-            docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/frontend:latest --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
-            docker push ${{ secrets.ARTIFACT_REGISTRY }}/frontend:latest
+            docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/hack-aso-grupo-04-back:latest --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
+            docker push ${{ secrets.ARTIFACT_REGISTRY }}/hack-aso-grupo-04-back:latest
 
         - name: Show file
           run: cat src/App.js
@@ -48,10 +48,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Deploy Frontend no  Cloud Run
+      - name: Deploy hack-aso-grupo-04-back no  Cloud Run
         id: deploy
         run: |-
-          gcloud run deploy frontend \
+          gcloud run deploy hack-aso-grupo-04-back \
             --quiet \
             --region  ${{ secrets.GOOGLE_REGION }} \
             --image ${{ secrets.ARTIFACT_REGISTRY }}/hack-aso-grupo-04-back:latest \
