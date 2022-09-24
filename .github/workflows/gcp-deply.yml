@@ -21,12 +21,14 @@ jobs:
           run: | 
             echo '${{ secrets.GOOGLE_CREDENTIALS }}' > key.json
             cat key.json | docker login -u _json_key --password-stdin https://us-east4-docker.pkg.dev/
+
         - name: Build Imag & Push para Google Registry
           env: 
             ARTIFACT_REGISTRY: ${{ secrets.ARTIFACT_REGISTRY }}
           run: | 
             docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/HACK-ASO-GRUPO-04-BACK:latest .
             docker push ${{ secrets.ARTIFACT_REGISTRY }}/HACK-ASO-GRUPO-04-BACK:latest
+
   Deploy:
     needs: Build
     runs-on: ubuntu-latest
